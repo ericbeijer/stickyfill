@@ -420,31 +420,45 @@ const Stickyfill = {
 
     removeAll () {
         while (stickies.length) stickies[0].remove();
+    },
+
+    setScrollContainer (scrollContainer) {
+        // Check whether it’s a node
+        if (!(scrollContainer instanceof HTMLElement)) {
+            // Maybe it’s a node list of some sort?
+            // Take first node from the list then
+            if (scrollContainer.length && scrollContainer[0]) scrollContainer = scrollContainer[0];
+            else return;
+        }
+
+        window.removeEventListener('scroll', checkScroll);
+        scrollContainer.addEventListener('scroll', () => { checkScroll(scrollContainer); });
     }
 };
 
+// Watch for scroll position changes and trigger recalc/refresh if needed
+function checkScroll (scrollContainer) {
+    scrollContainer = scrollContainer || window;
+
+    if (scrollContainer.pageXOffset != scroll.left) {
+        scroll.top = scrollContainer.pageYOffset;
+        scroll.left = scrollContainer.pageXOffset;
+
+        Stickyfill.refreshAll();
+    }
+    else if (scrollContainer.pageYOffset != scroll.top) {
+        scroll.top = scrollContainer.pageYOffset;
+        scroll.left = scrollContainer.pageXOffset;
+
+        // recalc position for all stickies
+        stickies.forEach(sticky => sticky._recalcPosition());
+    }
+}
 
 /*
  * 6. Setup events (unless the polyfill was disabled)
  */
 function init () {
-    // Watch for scroll position changes and trigger recalc/refresh if needed
-    function checkScroll () {
-        if (window.pageXOffset != scroll.left) {
-            scroll.top = window.pageYOffset;
-            scroll.left = window.pageXOffset;
-
-            Stickyfill.refreshAll();
-        }
-        else if (window.pageYOffset != scroll.top) {
-            scroll.top = window.pageYOffset;
-            scroll.left = window.pageXOffset;
-
-            // recalc position for all stickies
-            stickies.forEach(sticky => sticky._recalcPosition());
-        }
-    }
-
     checkScroll();
     window.addEventListener('scroll', checkScroll);
 
